@@ -3,20 +3,11 @@ import { Text, TextInput, View, StyleSheet, TouchableOpacity, Image } from 'reac
 import PrimaryButton from '../components/PrimaryButton';
 import LoginIcon from '../assets/icon.png';
 import { Link } from 'expo-router';
+import Login from './login';
 
-export default function Login() {
+export default function App() {
   return (
-    <View style={[styles.container, { flexDirection: 'column' }]}>
-      <StatusBar style="dark" />
-      <Image source={LoginIcon} style={styles.iconImage} />
-      <TextInput style={styles.input} placeholder='Email' keyboardType='email-address' />
-      <TextInput style={styles.input} placeholder='Password' secureTextEntry={true} />
-      <PrimaryButton text='Login' ></PrimaryButton>
-      <View style={{ flexDirection: 'row', width: '100%', gap: 4, marginTop: 10 }}>
-        <Text style={styles.loginDesc}>Don’t have account? </Text>
-        <Link href='/register'><Text style={{ fontWeight: 'bold' }}>Register Here</Text></Link>
-      </View>
-    </View>
+    <Login />
 
   );
 }

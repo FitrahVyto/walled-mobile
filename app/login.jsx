@@ -11,12 +11,13 @@ export default function Login() {
             <Image source={LoginIcon} style={styles.iconImage} />
             <TextInput style={styles.input} placeholder='Email' keyboardType='email-address' />
             <TextInput style={styles.input} placeholder='Password' secureTextEntry={true} />
+            <TextInput style={styles.input} placeholder='Alamat' secureTextEntry={true} />
             <PrimaryButton text='Login' ></PrimaryButton>
             <View style={{ flexDirection: 'row', width: '100%', gap: 4, marginTop: 10 }}>
                 <Text style={styles.loginDesc}>Don’t have account? </Text>
                 <Link href='/register'><Text style={{ fontWeight: 'bold' }}>Register Here</Text></Link>
             </View>
-            <Link href='/(home)'><Text>Home sementara</Text></Link>
+            <Link href='/(home)'><Text>Ke Home!</Text></Link>
         </View>
 
     );
