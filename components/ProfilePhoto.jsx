@@ -1,10 +1,10 @@
 import { StyleSheet, View, Image } from 'react-native';
 
-export default function ProfilePhoto() {
+export default function ProfilePhoto({src }) {
     return (
         <Image
             style={styles.image}
-            src={'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ8kFH8DUKQhgdW1dkuo5C51YAPLuDB3vtcAw&s'}
+            source={src}
         />
     );
 }

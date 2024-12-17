@@ -5,7 +5,7 @@ import sendIcon from '../assets/send.png';
 import { useState } from 'react';
 import { Entypo } from '@expo/vector-icons';
 
-export default function DashboardBody() {
+export default function DashboardBody({ fullname, balance, accountNumber }) {
   const [isBalanceVisible, setIsBalanceVisible] = useState(false); 
 
   const toggleBalanceVisibility = () => {
@@ -18,7 +18,7 @@ export default function DashboardBody() {
       <View style={styles.greetingContainer}>
         <View style={styles.greetingRow}>
           <View style={{flex: 1, rowGap: 20}}>
-            <Text style={styles.greetingText}>Good Morning, Chelsea</Text>
+            <Text style={styles.greetingText}>Good Morning, {fullname}</Text>
             <Text style={styles.greetingSub}>Check all your incoming and outgoing transactions here</Text>
           </View>
           <Image source={sunIcon} style={styles.iconImage} />
@@ -27,7 +27,7 @@ export default function DashboardBody() {
 
       <View style={styles.accountBox}>
         <Text style={styles.accountLabel}>Account No.</Text>
-        <Text style={styles.accountLabel}>100899</Text>
+        <Text style={styles.accountLabel}>{accountNumber}</Text>
       </View>
 
       <View style={styles.balanceSection}>
@@ -35,11 +35,11 @@ export default function DashboardBody() {
           <Text style={styles.balanceLabel}>Balance</Text>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             {isBalanceVisible ? (
-              <Text style={styles.balanceValue}>Rp 10.000.000</Text>
+              <Text style={styles.balanceValue}>Rp {parseFloat(balance).toLocaleString('id-ID')}</Text>
             ) : (
               <Text style={styles.balanceValue}>Rp ********</Text>
             )}
- 
+
             <TouchableOpacity onPress={toggleBalanceVisibility} style={{ marginLeft: 4 }}>
               {isBalanceVisible ? (
                 <Entypo name="eye" size={15} color="black" right={5} marginTop ={5}/>
