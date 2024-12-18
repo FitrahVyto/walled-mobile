@@ -5,29 +5,39 @@ import { Ionicons } from '@expo/vector-icons';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
 
+
 export default function TabLayout() {
     return (
-        <Tabs screenOptions={{ tabBarActiveTintColor: 'green', HeaderShown: false }}>
+        <Tabs 
+            screenOptions={{ 
+                headerShown: false,
+                tabBarActiveTintColor: '#19918F',  // Warna ikon saat tab aktif
+                tabBarInactiveTintColor: 'grey',   // Warna ikon saat tab tidak aktif
+            }}
+        >
             <Tabs.Screen
                 name="index"
-
                 options={{
                     headerShown: false,
-                    tabBarIcon: (() => <FontAwesome5 name="home" size={24} color="#19918F" />)
+                    tabBarIcon: ({ color }) => (
+                        <FontAwesome5 name="home" size={24} color={color} />
+                    )
                 }}
             />
             <Tabs.Screen
-                name="topup" 
+                name="topup"
                 options={{
-                    // headerShown: false,
-                    tabBarIcon: (() => <FontAwesome6 name="money-bill-trend-up" size={24} color="#19918F" />)
+                    tabBarIcon: ({ color }) => (
+                        <FontAwesome6 name="money-bill-trend-up" size={24} color={color} />
+                    )
                 }}
             />
             <Tabs.Screen
                 name="transfer"
                 options={{
-                    // headerShown: false,
-                    tabBarIcon: (() => <FontAwesome6 name="money-bill-transfer" size={24} color="#19918F" />)
+                    tabBarIcon: ({ color }) => (
+                        <FontAwesome6 name="paper-plane" size={24} color={color}/>
+                    )
                 }}
             />
         </Tabs>

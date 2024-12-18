@@ -113,7 +113,7 @@ export default function DashboardBody({ fullname, balance, accountNumber }) {
                   <View style={styles.avatarPlaceholder}></View>
                   <View style={styles.transactionTextBlock}>
                     {/* Menggunakan id atau _id sesuai data dari API */}
-                    <Text style={styles.transactionName}>ID: {transaction.id}</Text>
+                    <Text style={styles.transactionName}>{transaction.recipient_username}</Text>
                     <Text style={styles.transactionType}>{transaction.description}</Text>
                     <Text style={styles.transactionDate}>
                       {new Date(transaction.transaction_date).toLocaleString("id-ID", {
