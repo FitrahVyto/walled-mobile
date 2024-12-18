@@ -1,18 +1,47 @@
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, SafeAreaView, Alert } from "react-native";
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Picker } from '@react-native-picker/picker';
-
-
 
 export default function Topup() {
     const [amount, setAmount] = useState(0);
+    const [description, setDescription] = useState(''); 
     const [transaction, setTransaction] = useState(null);
+    const [balance, setBalance] = useState(0);
+
+    useEffect(() => {
+        fetchBalance();
+    }, []);
+
+    const fetchBalance = async () => {
+        try {
+            const token = await AsyncStorage.getItem('token');
+            if (!token) return;
+
+            // Gunakan endpoint /profile karena di situ terdapat data balance
+            const response = await fetch('https://walled-api.vercel.app/profile', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            // Respons JSON
+            const result = await response.json();
+            
+            if (response.ok && result.data && result.data.wallet && result.data.wallet.balance) {
+                // Ambil balance dari result.data.wallet.balance
+                setBalance(parseFloat(result.data.wallet.balance));
+            } else {
+                console.error("Failed to fetch balance:", result);
+            }
+        } catch (err) {
+            console.error("Error fetching balance:", err);
+        }
+    };
 
     const handleTopUp = async () => {
         try {
-            const token = await AsyncStorage.getItem('token'); // Ambil token dari AsyncStorage
-            
+            const token = await AsyncStorage.getItem('token'); 
             if (!token) {
                 Alert.alert('Error', 'Token not found. Please log in again.');
                 return;
@@ -22,20 +51,23 @@ export default function Topup() {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}` // Tambahkan Authorization header
+                    'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({ amount }),
+                body: JSON.stringify({ 
+                    amount,
+                    description
+                }),
             });
 
-            if (response.ok) {
-                const result = await response.json();
-                setTransaction(result.data); // Simpan data transaksi
+            const result = await response.json();
 
+            if (response.ok) {
+                setTransaction(result.data);
                 Alert.alert('Success', 'Top up successful');
-                // Optionally, navigate to another screen or perform other actions
+                // Setelah top up berhasil, refresh balance
+                fetchBalance();
             } else {
-                const errorData = await response.json();
-                Alert.alert('Error', errorData.message || 'Top up failed');
+                Alert.alert('Error', result.message || 'Top up failed');
             }
         } catch (error) {
             Alert.alert('Error', 'An error occurred. Please try again later.');
@@ -51,15 +83,16 @@ export default function Topup() {
                     <Text style={{ fontSize: 16, marginRight: 12, marginTop: 12 }}>IDR</Text>
                     <TextInput
                         style={{ fontSize: 40 }}
-                        placeholder="100.000"
+                        placeholder="100000"
                         keyboardType="number-pad"
                         value={amount.toString()}
-                        onChangeText={text => setAmount(parseFloat(text) || 0)} // Parsing value
+                        onChangeText={text => setAmount(parseFloat(text) || 0)} 
                     />
                 </View>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: '100%' }}>
                     <Text style={{ color: '#b3b3b3' }}>Balance</Text>
-                    <Text style={{ color: '#19918F' }}>IDR 10.000.000</Text>
+                    {/* Menampilkan balance yang diambil dari /profile */}
+                    <Text style={{ color: '#19918F' }}>IDR {balance.toLocaleString('id-ID')}</Text>
                 </View>
             </View>
 
@@ -77,12 +110,14 @@ export default function Topup() {
                 </Picker>
             </View>
 
-            {/* Notes Section */}
+            {/* Description Section */}
             <View style={{ padding: 10, width: '100%', backgroundColor: 'white', marginBottom: 24 }}>
-                <Text style={{ color: '#b3b3b3' }}>Notes</Text>
+                <Text style={{ color: '#b3b3b3' }}>Description</Text>
                 <TextInput
                     style={{ borderBottomColor: '#b3b3b3', borderBottomWidth: 0.5 }}
-                    placeholder="Add a note"
+                    placeholder="Dari istri"
+                    value={description}
+                    onChangeText={setDescription}
                 />
             </View>
 
@@ -105,10 +140,10 @@ export default function Topup() {
             {transaction && (
                 <View style={{ padding: 10, backgroundColor: 'white', marginTop: 24 }}>
                     <Text style={{ color: '#b3b3b3' }}>Transaction Details</Text>
-                    <Text>Name: {transaction.id}</Text>
-                    <Text>Type: {transaction.description}</Text>
+                    <Text>ID: {transaction.id}</Text>
+                    <Text>Description: {transaction.description}</Text>
                     <Text>Date: {new Date(transaction.transaction_date).toLocaleString()}</Text>
-                    <Text>Amount: {transaction.transactionAmountMinus}</Text>
+                    <Text>Amount: {transaction.amount}</Text>
                 </View>
             )}
         </SafeAreaView>

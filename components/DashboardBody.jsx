@@ -9,11 +9,10 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function DashboardBody({ fullname, balance, accountNumber }) {
   const [isBalanceVisible, setIsBalanceVisible] = useState(false);
-  const [transactions, setTransactions] = useState([]); // State untuk menyimpan transaksi
-  const [loading, setLoading] = useState(true); // State untuk indikator loading pertama
-  const [isRefreshing, setIsRefreshing] = useState(false); // State untuk pembaruan otomatis
+  const [transactions, setTransactions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Fungsi untuk fetch transaksi dari backend
   const fetchTransactions = async () => {
     try {
       setIsRefreshing(true);
@@ -21,29 +20,27 @@ export default function DashboardBody({ fullname, balance, accountNumber }) {
       const response = await axios.get("https://walled-api.vercel.app/transactions", {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setTransactions(response.data.data); // Simpan data transaksi ke state
+      // Cek log data untuk memastikan field id
+      console.log("Transactions Data:", response.data.data);
+      setTransactions(response.data.data);
     } catch (error) {
       console.error("Error fetching transactions", error);
     } finally {
       setIsRefreshing(false);
-      setLoading(false); // Matikan indikator loading pertama
+      setLoading(false);
     }
   };
 
-  // Toggle balance visibility
   const toggleBalanceVisibility = () => {
     setIsBalanceVisible(!isBalanceVisible);
   };
 
-  // Efek untuk polling data transaksi secara berkala
   useEffect(() => {
-    fetchTransactions(); // Panggil pertama kali saat komponen di-mount
-
+    fetchTransactions();
     const interval = setInterval(() => {
-      fetchTransactions(); // Perbarui transaksi setiap 10 detik
-    }, 10000); // 10 detik
-
-    return () => clearInterval(interval); // Bersihkan interval saat komponen di-unmount
+      fetchTransactions();
+    }, 10000);
+    return () => clearInterval(interval);
   }, []);
 
   return (
@@ -109,12 +106,13 @@ export default function DashboardBody({ fullname, balance, accountNumber }) {
           <ActivityIndicator size="large" color="#19918F" />
         ) : (
           transactions
-            .sort((a, b) => new Date(b.transaction_date) - new Date(a.transaction_date)) // Urutkan berdasarkan tanggal terbaru
+            .sort((a, b) => new Date(b.transaction_date) - new Date(a.transaction_date))
             .map((transaction) => (
-              <View key={transaction.id} style={styles.transactionItem}>
+              <View key={transaction.id || transaction._id} style={styles.transactionItem}>
                 <View style={styles.transactionLeft}>
                   <View style={styles.avatarPlaceholder}></View>
                   <View style={styles.transactionTextBlock}>
+                    {/* Menggunakan id atau _id sesuai data dari API */}
                     <Text style={styles.transactionName}>ID: {transaction.id}</Text>
                     <Text style={styles.transactionType}>{transaction.description}</Text>
                     <Text style={styles.transactionDate}>
@@ -125,7 +123,7 @@ export default function DashboardBody({ fullname, balance, accountNumber }) {
                         hour: "2-digit",
                         minute: "2-digit",
                         second: "2-digit",
-                        hour12: false, // Format 24 jam
+                        hour12: false,
                       })}
                     </Text>
                   </View>
