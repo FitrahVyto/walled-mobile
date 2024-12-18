@@ -19,7 +19,7 @@ export default function Topup() {
             if (!token) return;
 
             // Gunakan endpoint /profile karena di situ terdapat data balance
-            const response = await fetch('https://walled-api.vercel.app/profile', {
+            const response = await fetch('https://walled-api-phi.vercel.app/profile', {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -47,7 +47,7 @@ export default function Topup() {
                 return;
             }
 
-            const response = await fetch('https://walled-api.vercel.app/transactions/topup', {
+            const response = await fetch('https://walled-api-phi.vercel.app/transactions/topup', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

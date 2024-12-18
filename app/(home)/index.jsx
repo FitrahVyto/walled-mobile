@@ -20,7 +20,7 @@ export default function Home() {
                 if (token !== null) {
                     console.log('token ada', token)
                     
-                    const res = await axios.get(`https://walled-api.vercel.app/profile`, {
+                    const res = await axios.get(`https://walled-api-phi.vercel.app/profile`, {
                         headers: {
                             Authorization: `Bearer ${token}`
                         }

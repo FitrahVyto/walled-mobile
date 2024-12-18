@@ -12,16 +12,17 @@ export default function DashboardBody({ fullname, balance, accountNumber }) {
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  
+  // State untuk menyimpan balance dari backend
+  const [currentBalance, setCurrentBalance] = useState(balance);
 
   const fetchTransactions = async () => {
     try {
       setIsRefreshing(true);
       const token = await AsyncStorage.getItem("token");
-      const response = await axios.get("https://walled-api.vercel.app/transactions", {
+      const response = await axios.get("https://walled-api-phi.vercel.app/transactions", {
         headers: { Authorization: `Bearer ${token}` },
       });
-      // Cek log data untuk memastikan field id
-      console.log("Transactions Data:", response.data.data);
       setTransactions(response.data.data);
     } catch (error) {
       console.error("Error fetching transactions", error);
@@ -31,15 +32,39 @@ export default function DashboardBody({ fullname, balance, accountNumber }) {
     }
   };
 
+  const fetchProfile = async () => {
+    try {
+      const token = await AsyncStorage.getItem("token");
+      if (!token) return;
+      const response = await axios.get("https://walled-api-phi.vercel.app/profile", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const profileData = response.data.data;
+      
+      // Ambil balance dari profileData
+      if (profileData && profileData.wallet && profileData.wallet.balance) {
+        setCurrentBalance(parseFloat(profileData.wallet.balance));
+      }
+    } catch (error) {
+      console.error("Error fetching profile and balance:", error);
+    }
+  };
+
   const toggleBalanceVisibility = () => {
     setIsBalanceVisible(!isBalanceVisible);
   };
 
   useEffect(() => {
+    // Pertama kali komponen mount, fetch data transaksi dan profile
     fetchTransactions();
+    fetchProfile();
+
+    // Buat interval untuk update transaksi dan balance secara berkala
     const interval = setInterval(() => {
       fetchTransactions();
+      fetchProfile();
     }, 10000);
+
     return () => clearInterval(interval);
   }, []);
 
@@ -68,7 +93,7 @@ export default function DashboardBody({ fullname, balance, accountNumber }) {
           <Text style={styles.balanceLabel}>Balance</Text>
           <View style={{ flexDirection: "row", alignItems: "center" }}>
             {isBalanceVisible ? (
-              <Text style={styles.balanceValue}>Rp {parseFloat(balance).toLocaleString("id-ID")}</Text>
+              <Text style={styles.balanceValue}>Rp {parseFloat(currentBalance).toLocaleString("id-ID")}</Text>
             ) : (
               <Text style={styles.balanceValue}>Rp ********</Text>
             )}
@@ -112,7 +137,6 @@ export default function DashboardBody({ fullname, balance, accountNumber }) {
                 <View style={styles.transactionLeft}>
                   <View style={styles.avatarPlaceholder}></View>
                   <View style={styles.transactionTextBlock}>
-                    {/* Menggunakan id atau _id sesuai data dari API */}
                     <Text style={styles.transactionName}>{transaction.recipient_username}</Text>
                     <Text style={styles.transactionType}>{transaction.description}</Text>
                     <Text style={styles.transactionDate}>

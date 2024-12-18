@@ -36,7 +36,7 @@ export default function Login() {
         console.log('submit!', form);
         try {
             LoginSchema.parse(form);
-            const res = await axios.post("https://walled-api.vercel.app/auth/login", form);
+            const res = await axios.post("https://walled-api-phi.vercel.app/auth/login", form);
             if (res) {
                 try {
                     await AsyncStorage.setItem('token', res.data.data.token);
