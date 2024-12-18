@@ -1,27 +1,44 @@
-import { View, Text, StyleSheet, TextInput, ScrollView, TouchableOpacity, SafeAreaView, Alert } from "react-native";
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, SafeAreaView, Alert } from "react-native";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { useState } from 'react';
 import { Picker } from '@react-native-picker/picker';
-import { useState } from "react";
+
+
 
 export default function Topup() {
     const [amount, setAmount] = useState(0);
+    const [transaction, setTransaction] = useState(null);
 
     const handleTopUp = async () => {
         try {
-            const response = await fetch('http://localhost:8080/topup', {
+            const token = await AsyncStorage.getItem('token'); // Ambil token dari AsyncStorage
+            
+            if (!token) {
+                Alert.alert('Error', 'Token not found. Please log in again.');
+                return;
+            }
+
+            const response = await fetch('https://walled-api.vercel.app/transactions/topup', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}` // Tambahkan Authorization header
                 },
                 body: JSON.stringify({ amount }),
             });
 
             if (response.ok) {
+                const result = await response.json();
+                setTransaction(result.data); // Simpan data transaksi
+
                 Alert.alert('Success', 'Top up successful');
+                // Optionally, navigate to another screen or perform other actions
             } else {
-                Alert.alert('Error', 'Top up failed');
+                const errorData = await response.json();
+                Alert.alert('Error', errorData.message || 'Top up failed');
             }
         } catch (error) {
-            Alert.alert('Error', 'An error occurred');
+            Alert.alert('Error', 'An error occurred. Please try again later.');
         }
     };
 
@@ -37,7 +54,7 @@ export default function Topup() {
                         placeholder="100.000"
                         keyboardType="number-pad"
                         value={amount.toString()}
-                        onChangeText={setAmount}
+                        onChangeText={text => setAmount(parseFloat(text) || 0)} // Parsing value
                     />
                 </View>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: '100%' }}>
@@ -50,9 +67,9 @@ export default function Topup() {
             <View style={{ padding: 10, width: '100%', backgroundColor: 'white', marginBottom: 24 }}>
                 <Text style={{ color: '#b3b3b3' }}>Payment Method</Text>
                 <Picker
-                    selectedValue={"default"}
+                    selectedValue="default"
                     style={{ width: '100%', marginBottom: 22 }}
-                    onValueChange={(itemValue, itemIndex) => console.log(itemValue)}
+                    onValueChange={(itemValue) => console.log(itemValue)}
                 >
                     <Picker.Item label="BYOND Pay" value="option1" />
                     <Picker.Item label="OVO" value="option2" />
@@ -83,6 +100,17 @@ export default function Topup() {
             >
                 <Text style={{ color: '#fff', fontWeight: 'bold' }}>Top Up</Text>
             </TouchableOpacity>
+
+            {/* Display Transaction Details */}
+            {transaction && (
+                <View style={{ padding: 10, backgroundColor: 'white', marginTop: 24 }}>
+                    <Text style={{ color: '#b3b3b3' }}>Transaction Details</Text>
+                    <Text>Name: {transaction.id}</Text>
+                    <Text>Type: {transaction.description}</Text>
+                    <Text>Date: {new Date(transaction.transaction_date).toLocaleString()}</Text>
+                    <Text>Amount: {transaction.transactionAmountMinus}</Text>
+                </View>
+            )}
         </SafeAreaView>
     );
 }

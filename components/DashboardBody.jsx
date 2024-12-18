@@ -10,12 +10,13 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 export default function DashboardBody({ fullname, balance, accountNumber }) {
   const [isBalanceVisible, setIsBalanceVisible] = useState(false);
   const [transactions, setTransactions] = useState([]); // State untuk menyimpan transaksi
-  const [loading, setLoading] = useState(true); // State untuk indikator loading
+  const [loading, setLoading] = useState(true); // State untuk indikator loading pertama
+  const [isRefreshing, setIsRefreshing] = useState(false); // State untuk pembaruan otomatis
 
   // Fungsi untuk fetch transaksi dari backend
   const fetchTransactions = async () => {
     try {
-      setLoading(true);
+      setIsRefreshing(true);
       const token = await AsyncStorage.getItem("token");
       const response = await axios.get("https://walled-api.vercel.app/transactions", {
         headers: { Authorization: `Bearer ${token}` },
@@ -24,7 +25,8 @@ export default function DashboardBody({ fullname, balance, accountNumber }) {
     } catch (error) {
       console.error("Error fetching transactions", error);
     } finally {
-      setLoading(false); // Matikan indikator loading
+      setIsRefreshing(false);
+      setLoading(false); // Matikan indikator loading pertama
     }
   };
 
@@ -33,8 +35,15 @@ export default function DashboardBody({ fullname, balance, accountNumber }) {
     setIsBalanceVisible(!isBalanceVisible);
   };
 
+  // Efek untuk polling data transaksi secara berkala
   useEffect(() => {
-    fetchTransactions(); // Panggil fetchTransactions ketika komponen di-mount
+    fetchTransactions(); // Panggil pertama kali saat komponen di-mount
+
+    const interval = setInterval(() => {
+      fetchTransactions(); // Perbarui transaksi setiap 10 detik
+    }, 10000); // 10 detik
+
+    return () => clearInterval(interval); // Bersihkan interval saat komponen di-unmount
   }, []);
 
   return (
@@ -91,200 +100,201 @@ export default function DashboardBody({ fullname, balance, accountNumber }) {
 
       {/* Transaction History */}
       <View style={styles.transactionContainer}>
-        <Text style={styles.transactionHeader}>Transaction History</Text>
+        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+          <Text style={styles.transactionHeader}>Transaction History</Text>
+          {isRefreshing && <ActivityIndicator size="small" color="#19918F" />}
+        </View>
 
-        {/* Loading State */}
         {loading ? (
           <ActivityIndicator size="large" color="#19918F" />
         ) : (
-          transactions.map((transaction) => (
-            <View key={transaction.id} style={styles.transactionItem}>
-              <View style={styles.transactionLeft}>
-                <View style={styles.avatarPlaceholder}></View>
-                <View style={styles.transactionTextBlock}>
-                  <Text style={styles.transactionName}>ID: {transaction.id}</Text>
-                  <Text style={styles.transactionType}>{transaction.description}</Text>
-                  <Text style={styles.transactionDate}>
-                    {new Date(transaction.transaction_date).toLocaleDateString("id-ID")}
-                  </Text>
+          transactions
+            .sort((a, b) => new Date(b.transaction_date) - new Date(a.transaction_date)) // Urutkan berdasarkan tanggal terbaru
+            .map((transaction) => (
+              <View key={transaction.id} style={styles.transactionItem}>
+                <View style={styles.transactionLeft}>
+                  <View style={styles.avatarPlaceholder}></View>
+                  <View style={styles.transactionTextBlock}>
+                    <Text style={styles.transactionName}>ID: {transaction.id}</Text>
+                    <Text style={styles.transactionType}>{transaction.description}</Text>
+                    <Text style={styles.transactionDate}>
+                      {new Date(transaction.transaction_date).toLocaleString("id-ID", {
+                        day: "2-digit",
+                        month: "2-digit",
+                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        second: "2-digit",
+                        hour12: false, // Format 24 jam
+                      })}
+                    </Text>
+                  </View>
                 </View>
+                <Text
+                  style={
+                    transaction.transaction_type === "top-up"
+                      ? styles.transactionAmountPlus
+                      : styles.transactionAmountMinus
+                  }
+                >
+                  {transaction.transaction_type === "top-up"
+                    ? `+ ${parseFloat(transaction.amount).toLocaleString("id-ID")}`
+                    : `- ${parseFloat(transaction.amount).toLocaleString("id-ID")}`}
+                </Text>
               </View>
-              <Text
-                style={
-                  transaction.transaction_type === "top-up"
-                    ? styles.transactionAmountPlus
-                    : styles.transactionAmountMinus
-                }
-              >
-                {transaction.transaction_type === "top-up" ? `+ ${parseFloat(transaction.amount).toLocaleString("id-ID")}` : `- ${parseFloat(transaction.amount).toLocaleString("id-ID")}`}
-              </Text>
-            </View>
-          ))
+            ))
         )}
       </View>
     </ScrollView>
   );
 }
 
-
 const styles = StyleSheet.create({
   scrollContent: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: "#F5F5F5",
     paddingHorizontal: 16,
-    paddingTop: 16
+    paddingTop: 16,
   },
   greetingContainer: {
-    marginBottom: 16
+    marginBottom: 16,
   },
   greetingRow: {
-    flexDirection: 'row', 
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
     marginBottom: 4,
     gap: 10,
   },
   greetingText: {
     fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 4
+    fontWeight: "bold",
+    marginBottom: 4,
   },
   greetingSub: {
     fontSize: 14,
-    color: '#555'
+    color: "#555",
   },
   iconImage: {
     width: 80,
     height: 80,
-    resizeMode: 'contain',
-    marginLeft: 8
+    resizeMode: "contain",
+    marginLeft: 8,
   },
-  emojiIcon: {
-    fontSize: 20
-  },
-
   accountBox: {
-    backgroundColor: '#19918F',
+    backgroundColor: "#19918F",
     padding: 16,
     borderRadius: 8,
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 16
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 16,
   },
   accountLabel: {
-    color: '#fff',
-    fontSize: 14
+    color: "#fff",
+    fontSize: 14,
   },
-  accountNumber: {
-    color: '#fff',
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginTop: 4
-  },
-
   balanceSection: {
     marginTop: 20,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     padding: 16,
     borderRadius: 10,
     marginBottom: 16,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    shadowColor: '#000',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    shadowColor: "#000",
     shadowOpacity: 0.05,
     shadowRadius: 5,
-    elevation: 1
+    elevation: 1,
   },
   balanceInfo: {
-    flex: 1
+    flex: 1,
   },
   balanceLabel: {
     fontSize: 14,
-    color: '#555'
+    color: "#555",
   },
   balanceValue: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginTop: 4,
-    marginRight: 8
+    marginRight: 8,
   },
   actionButtons: {
-    flexDirection: 'column',
-    gap: 10
+    flexDirection: "column",
+    gap: 10,
   },
   actionButton: {
-    backgroundColor: '#19918F',
+    backgroundColor: "#19918F",
     width: 40,
     height: 40,
     borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginLeft: 10
+    alignItems: "center",
+    justifyContent: "center",
+    marginLeft: 10,
   },
   actionButtonIcon: {
     width: 20,
     height: 20,
-    resizeMode: 'contain',
-    tintColor: '#fff'
+    resizeMode: "contain",
+    tintColor: "#fff",
   },
-
   transactionContainer: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     padding: 16,
     borderRadius: 10,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOpacity: 0.05,
     shadowRadius: 5,
-    elevation: 1
+    elevation: 1,
   },
   transactionHeader: {
     fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 12
+    fontWeight: "bold",
+    marginBottom: 12,
   },
   transactionItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
   },
   transactionLeft: {
-    flexDirection: 'row',
-    alignItems: 'center'
+    flexDirection: "row",
+    alignItems: "center",
   },
   avatarPlaceholder: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#ccc',
-    marginRight: 12
+    backgroundColor: "#ccc",
+    marginRight: 12,
   },
   transactionTextBlock: {
-    flexDirection: 'column'
+    flexDirection: "column",
   },
   transactionName: {
     fontSize: 14,
-    fontWeight: 'bold',
-    color: '#333'
+    fontWeight: "bold",
+    color: "#333",
   },
   transactionType: {
     fontSize: 12,
-    color: '#555'
+    color: "#555",
   },
   transactionDate: {
     fontSize: 12,
-    color: '#999'
+    color: "#999",
   },
   transactionAmountMinus: {
     fontSize: 14,
-    color: 'red',
-    fontWeight: 'bold'
+    color: "red",
+    fontWeight: "bold",
   },
   transactionAmountPlus: {
     fontSize: 14,
-    color: 'green',
-    fontWeight: 'bold'
-  }
+    color: "green",
+    fontWeight: "bold",
+  },
 });
